@@ -105,3 +105,34 @@ class RandomForestModel:
         if self.cv_results_ is None:
             raise ValueError("The model is not trained yet. Call train() first.")
         return self.cv_results_
+
+
+# XGBoost Class
+class XGBoostModel:
+    def __init__(self):
+        # Hyperparameters definition
+        self.params = {
+            "n_estimators": [20, 50, 100],
+            "learning_rate": [0.01, 0.05, 0.1],
+            "max_depth": [8, 16, 32],
+            "subsample": [0.7, 0.8],
+            "colsample_bytree": [0.8, 0.9]
+        }
+
+    def train(self, x_train, y_train):
+        # Define the model
+        model = xgb.XGBClassifier()
+
+        # Hyperparameter optimization
+        grid_search = GridSearchCV(estimator=model,
+                                   param_grid=self.params,
+                                   scoring="accuracy",
+                                   cv=5,
+                                   n_jobs=-1)
+        grid_search.fit(x_train, y_train)
+
+        # Get best model
+        best_model = grid_search.best_estimator_
+        print("Best XGBoost Parameters:", grid_search.best_params_)
+
+        return best_model
