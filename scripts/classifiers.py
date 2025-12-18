@@ -1,24 +1,13 @@
-import numpy as np
-from sklearn.model_selection import GridSearchCV
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+
 import xgboost as xgb
-import lightgbm as lgbm
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.ensemble import RandomForestClassifier
-
+import joblib
+import os
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import GridSearchCV
-import pandas as pd
 
-
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.model_selection import GridSearchCV
 
 class KNNModel:
     def __init__(self):
@@ -136,3 +125,65 @@ class XGBoostModel:
         print("Best XGBoost Parameters:", grid_search.best_params_)
 
         return best_model
+
+
+# XGBoost Class for One Segment
+class SegmentedXGBoost:
+    def __init__(self, random_state=42):
+        self.random_state = random_state
+        self.best_estimator_ = None
+        self.cv_results_ = None
+
+        self.params = {
+            "n_estimators": [100, 200, 300],
+            "learning_rate": [0.01, 0.05, 0.1],
+            "max_depth": [3, 4, 5, 6],
+            "subsample": [0.8],
+            "colsample_bytree": [0.8],
+            "scale_pos_weight": [1]
+        }
+
+    def train(self, x_train, y_train):
+        # 1. Base model
+        model = xgb.XGBClassifier(
+            objective='binary:logistic',
+            eval_metric='logloss',
+            use_label_encoder=False,
+            random_state=self.random_state,
+            n_jobs=1
+        )
+
+        # 2. Set up GridSearch
+        grid_search = GridSearchCV(
+            estimator=model,
+            param_grid=self.params,
+            scoring="f1",
+            cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=self.random_state),
+            n_jobs=-1,
+            verbose=1
+        )
+
+        # 3. Start training
+        print(f"Training XGBoost on {x_train.shape[0]} samples...")
+        grid_search.fit(x_train, y_train)
+
+        # 4. Save results inside the class
+        self.best_estimator_ = grid_search.best_estimator_
+        self.cv_results_ = grid_search.cv_results_
+
+        print("Best XGBoost Parameters:", grid_search.best_params_)
+        print(f"Best CV F1-Score: {grid_search.best_score_:.4f}")
+
+        return self.best_estimator_
+
+    def get_best_params(self):
+        """Returns the best hyperparameters."""
+        if self.best_estimator_ is None:
+            raise ValueError("Model not trained.")
+        return self.best_estimator_.get_params()
+
+    def get_cv_results(self):
+        """Returns the CV results dictionary."""
+        if self.cv_results_ is None:
+            raise ValueError("Model not trained.")
+        return self.cv_results_
