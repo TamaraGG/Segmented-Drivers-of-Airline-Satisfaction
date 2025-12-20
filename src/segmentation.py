@@ -40,6 +40,61 @@ class SegmentManager:
 
         return X, y
 
+    def _log_target_stats(self, y: pd.Series, seg_name: str):
+        """
+        Logs distribution of target variable
+        """
+        if y is None: return
+
+        counts = y.value_counts()
+        fracs = y.value_counts(normalize=True)
+
+        print(f"   Target Distribution ({seg_name}):")
+        for cls_val in counts.index:
+            print(f"     Class {cls_val}: {counts[cls_val]:>5} samples ({fracs[cls_val]:6.1%})")
+
+    def _is_segment_viable(self, y: pd.Series, seg_name: str) -> bool:
+        """
+        Desids weather it's possible to train the model with such distribution of target variable
+        """
+        if y is None: return True
+
+        counts = y.value_counts()
+
+        if len(counts) < 2:
+            print(f"   [SKIP] Training impossible: Segment contains only Class {counts.index[0]}.")
+            return False
+
+        min_class_count = counts.min()
+        if min_class_count < 15:
+            print(f"   [WARNING] Risk of overfitting: Minority class has only {min_class_count} samples.")
+
+        return True
+
+    def _check_distribution(self, y: pd.Series, seg_name: str) -> bool:
+        """
+        Checks distribution of target feature in a segment.
+        """
+        if y is None:
+            return True
+
+        counts = y.value_counts()
+        fracs = y.value_counts(normalize=True)
+
+        print(f"   Target Distribution (y_train):")
+        for cls_val in counts.index:
+            print(f"     Class {cls_val}: {counts[cls_val]} samples ({fracs[cls_val]:.1%})")
+
+        if len(counts) < 2:
+            print(f"   [SKIP] Segment '{seg_name}' has only ONE target class. Training impossible.")
+            return False
+
+        min_class_count = counts.min()
+        if min_class_count < 10:
+            print(f"   [WARNING] Extremely rare minority class ({min_class_count} samples). Results might be unstable.")
+
+        return True
+
     def iterate_segments(self, df_train: pd.DataFrame, df_test: pd.DataFrame = None) -> Generator:
         """
         Generator that generates data for every segment.
@@ -79,6 +134,11 @@ class SegmentManager:
 
             # 3. feature selection
             X_train, y_train = self._prepare_subset(train_subset, drop_cols)
+
+            self._log_target_stats(y_train, seg_name)
+
+            if not self._is_segment_viable(y_train, seg_name):
+                continue
 
             X_test, y_test = None, None
             if test_subset is not None:
