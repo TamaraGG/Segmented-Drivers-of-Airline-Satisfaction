@@ -41,7 +41,7 @@ SERVICE_COLS = [
 ]
 
 # for auto Ordinal Encoding (Gender, Customer Type)
-AUTO_ENCODING_COLS = ['Gender', 'Customer Type']
+AUTO_ENCODING_COLS = ['Gender', 'Customer Type', 'Type of Travel']
 
 # ==========================================
 # 3. Mappings
@@ -86,7 +86,7 @@ SEGMENT_CONFIGS = []
 SEGMENT_CONFIGS.append({
     'name': 'Global_All_Data',
     'filter': lambda df: slice(None),
-    'drop_cols': []
+    'drop_cols': ['Class']
 })
 
 # --- 2. MACRO SEGMENTS ---
