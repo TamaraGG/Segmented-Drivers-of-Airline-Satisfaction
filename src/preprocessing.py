@@ -105,6 +105,31 @@ class DataPreprocessor:
 
         return df
 
+    def drop_rows_with_by_value(self, df: pd.DataFrame, columns: list, drop_value) -> pd.DataFrame:
+        """
+        Deletes rows with 0s.
+        """
+        df = df.copy()
+
+        valid_cols = [c for c in columns if c in df.columns]
+        if not valid_cols:
+            print("Warning: No valid columns provided for dropping zeros.")
+            return df
+
+        mask = (df[valid_cols] == drop_value).any(axis=1)
+
+        rows_to_drop = mask.sum()
+
+        if rows_to_drop > 0:
+            original_len = len(df)
+            df = df[~mask]
+            print(
+                f"Dropped {rows_to_drop} rows ({rows_to_drop / original_len:.2%}) containing {drop_value}s.")
+        else:
+            print(f"No {drop_value}s found in mandatory columns. No rows dropped.")
+
+        return df
+
     def transform_log_sum(self, df: pd.DataFrame, input_cols: list, output_col: str,
                           drop_input: bool = True) -> pd.DataFrame:
         """
@@ -225,4 +250,52 @@ class DataPreprocessor:
         plt.figure(figsize=[8, 4])
         sbn.histplot(df[target_col], color='g', edgecolor="black", bins=3)
         plt.title(f"Target Variable Distribution: {target_col}")
+        plt.show()
+
+    def plot_interaction_evidence(self, df: pd.DataFrame, x_col: str, target_col: str, group_col: str):
+        """
+        Строит график взаимодействия (Interaction Plot) для обоснования сегментации.
+        Показывает, как по-разному признак x_col влияет на target_col в зависимости от группы group_col.
+
+        :param x_col: Признак воздействия (например, 'Inflight wifi service')
+        :param target_col: Целевая переменная (например, 'satisfaction')
+        :param group_col: Признак сегментации (например, 'Type of Travel')
+        """
+        plt.figure(figsize=(10, 6))
+
+        # Подготовка данных для графика
+        plot_df = df.copy()
+
+        # Если таргет текстовый, кодируем его временно в 0/1 для расчета среднего
+        if plot_df[target_col].dtype == 'object':
+            # Пытаемся угадать маппинг, если он стандартный
+            if 'satisfied' in plot_df[target_col].unique():
+                temp_map = {'neutral or dissatisfied': 0, 'satisfied': 1}
+                plot_df[target_col] = plot_df[target_col].map(temp_map)
+            else:
+                # Если значения другие, используем factorize
+                plot_df[target_col] = pd.factorize(plot_df[target_col])[0]
+
+        # Рисуем график
+        # Используем lineplot с агрегацией (по умолчанию mean) и доверительными интервалами
+        sbn.lineplot(
+            data=plot_df,
+            x=x_col,
+            y=target_col,
+            hue=group_col,
+            style=group_col,  # Разные стили линий для доступности (ч/б печать)
+            markers=True,
+            dashes=False,
+            linewidth=2.5,
+            palette='deep',
+            err_style='bars',  # Показываем доверительные интервалы, чтобы доказать статистическую значимость
+            errorbar=('ci', 95)
+        )
+
+        plt.title(f"Evidence for Segmentation: Interaction Effect\n({x_col} × {group_col})", fontsize=14)
+        plt.ylabel(f"Probability of '{target_col}' (Satisfaction Rate)", fontsize=12)
+        plt.xlabel(f"{x_col} Rating (1-5)", fontsize=12)
+        plt.grid(True, alpha=0.3)
+        plt.legend(title=group_col, loc='upper left')
+        plt.tight_layout()
         plt.show()
