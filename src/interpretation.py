@@ -69,7 +69,6 @@ class ShapAnalyzer:
             show=False
         )
         plt.tight_layout()
-        plt.show()
 
     def plot_dependence(self, X: pd.DataFrame, feature: str, interaction_feature: str = None):
         """
@@ -97,7 +96,6 @@ class ShapAnalyzer:
 
         plt.axhline(0, color='grey', linestyle='--', alpha=0.5)
         plt.tight_layout()
-        plt.show()
 
     def plot_interaction(self, X: pd.DataFrame, feature_x: str, feature_color: str):
         """
@@ -119,4 +117,3 @@ class ShapAnalyzer:
         )
 
         plt.tight_layout()
-        plt.show()
