@@ -51,6 +51,11 @@ class ModelTrainer:
         """
         print(f"   >>> Training XGBoost on {len(X)} samples...")
 
+        object_cols = X.select_dtypes(include=['object']).columns.tolist()
+        if object_cols:
+            print(f"   [WARNING] Found object columns in X: {object_cols}. Dropping them automatically.")
+            X = X.drop(columns=object_cols)
+
         # 1. class weight
         calc_weight = self._calculate_scale_weight(y)
 
