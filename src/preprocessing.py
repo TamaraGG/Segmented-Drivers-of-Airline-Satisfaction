@@ -25,6 +25,36 @@ class DataPreprocessor:
 
         return metadata, numerical_cols, categorical_cols
 
+    def analyze_zeros(self, df: pd.DataFrame, columns: list, verbose: bool = True) -> pd.DataFrame:
+        """
+        Counts number and % of 0s in listed columns
+        """
+
+        valid_cols = [c for c in columns if c in df.columns]
+        if not valid_cols:
+            print("No valid columns provided for zero analysis.")
+            return pd.DataFrame()
+
+        zero_counts = (df[valid_cols] == 0).sum()
+        zero_percent = ((df[valid_cols] == 0).mean() * 100).round(2)
+
+        analysis_df = pd.DataFrame({
+            'Zeros Count': zero_counts,
+            'Zeros %': zero_percent
+        }).sort_values('Zeros %', ascending=False)
+
+        zeros_present = analysis_df[analysis_df['Zeros Count'] > 0]
+
+        if verbose:
+            print("\n=== Zero Values Analysis ===")
+            if not zeros_present.empty:
+                print(zeros_present)
+                print(f"\nTotal columns checked: {len(valid_cols)}")
+            else:
+                print("No zeros found in the specified columns.")
+
+        return analysis_df
+
     # ==========================================
     # 2. Clean and Transform
     # ==========================================
