@@ -4,7 +4,7 @@ import numpy as np
 # 1. General
 # ==========================================
 RANDOM_STATE = 42
-N_JOBS = -1  # Использовать все ядра процессора
+N_JOBS = -1
 
 # Path's
 DATA_PATH = "dataset/"
@@ -41,7 +41,7 @@ SERVICE_COLS = [
 ]
 
 # for auto Ordinal Encoding (Gender, Customer Type)
-AUTO_ENCODING_COLS = ['Gender', 'Customer Type', 'Type of Travel']
+AUTO_ENCODING_COLS = ['Gender', 'Customer Type']
 
 # ==========================================
 # 3. Mappings
