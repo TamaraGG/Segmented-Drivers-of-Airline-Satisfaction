@@ -94,7 +94,7 @@ for t_type in ALL_TYPES:
     SEGMENT_CONFIGS.append({
         'name': f"MACRO_{t_type.replace(' ', '_')}",
         'filter': lambda df, t=t_type: df['Type of Travel'] == t,
-        'drop_cols': ['Type of Travel']
+        'drop_cols': ['Type of Travel', 'Class']
     })
 
 # --- 3. MICRO SEGMENTS ---
