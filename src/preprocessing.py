@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sbn
-
+from typing import Callable
 
 class DataPreprocessor:
     """
@@ -150,6 +150,32 @@ class DataPreprocessor:
         if drop_input:
             df.drop(columns=valid_cols, inplace=True)
             print(f"Log-transform applied to '{output_col}'. Dropped: {valid_cols}")
+
+        return df
+
+    def create_feature(self, df: pd.DataFrame, output_col: str,
+                       func: Callable[[pd.DataFrame], pd.Series]) -> pd.DataFrame:
+        """
+        Creates new column.
+
+        :param df: original dataframe.
+        :param output_col: name of new column.
+        :param func: function that takes DF and returns Series.
+        """
+        df = df.copy()
+
+        try:
+            new_series = func(df)
+
+            if len(new_series) != len(df):
+                raise ValueError(f"Function returned length {len(new_series)}, expected {len(df)}")
+
+            df[output_col] = new_series
+            print(f"Feature created: '{output_col}'")
+
+        except Exception as e:
+            print(f"Error creating feature '{output_col}': {e}")
+            raise e
 
         return df
 
