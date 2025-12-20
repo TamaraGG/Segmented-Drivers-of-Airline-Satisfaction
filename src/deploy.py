@@ -1,16 +1,22 @@
 import os
 import joblib
-from typing import Any
-
+from typing import Any, Dict
+import json
+import matplotlib.pyplot as plt
 
 class ModelDeployer:
     """
     Class for saving and loading models
     """
 
-    def __init__(self, save_path: str):
-        self.save_path = save_path
-        os.makedirs(self.save_path, exist_ok=True)
+    def __init__(self, base_path: str):
+        self.base_path = base_path
+        self.models_path = os.path.join(base_path, "models")
+        self.reports_path = os.path.join(base_path, "reports")
+        self.plots_path = os.path.join(base_path, "plots")
+
+        for p in [self.models_path, self.reports_path, self.plots_path]:
+            os.makedirs(p, exist_ok=True)
 
     def save_model(self, model: Any, filename: str):
         """
@@ -19,7 +25,7 @@ class ModelDeployer:
         if not filename.endswith('.pkl'):
             filename += '.pkl'
 
-        full_path = os.path.join(self.save_path, filename)
+        full_path = os.path.join(self.models_path, f"{filename}.pkl")
 
         try:
             joblib.dump(model, full_path)
@@ -34,7 +40,7 @@ class ModelDeployer:
         if not filename.endswith('.pkl'):
             filename += '.pkl'
 
-        full_path = os.path.join(self.save_path, filename)
+        full_path = os.path.join(self.models_path, f"{filename}.pkl")
 
         if not os.path.exists(full_path):
             raise FileNotFoundError(f"Model file not found: {full_path}")
@@ -45,3 +51,19 @@ class ModelDeployer:
             return model
         except Exception as e:
             raise RuntimeError(f"Failed to load model {filename}: {e}")
+
+    def save_metrics(self, metrics: Dict, filename: str):
+        """Saves metrics in JSON"""
+        path = os.path.join(self.reports_path, f"{filename}_metrics.json")
+        with open(path, 'w') as f:
+            json.dump(metrics, f, indent=4)
+        print(f"   [Saved] Metrics: {path}")
+
+    def save_plot(self, filename: str):
+        """
+        Saves current active plot (plt.gcf) in .png format.
+        It should be called before plt.show()
+        """
+        path = os.path.join(self.plots_path, f"{filename}.png")
+        plt.savefig(path, bbox_inches='tight', dpi=150)
+        print(f"   [Saved] Plot: {path}")
