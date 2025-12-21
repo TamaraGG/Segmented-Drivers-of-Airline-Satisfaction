@@ -14,8 +14,9 @@ class ModelDeployer:
         self.models_path = os.path.join(base_path, "models")
         self.reports_path = os.path.join(base_path, "reports")
         self.plots_path = os.path.join(base_path, "plots")
+        self.params_path = os.path.join(base_path, "params")
 
-        for p in [self.models_path, self.reports_path, self.plots_path]:
+        for p in [self.models_path, self.reports_path, self.plots_path, self.params_path]:
             os.makedirs(p, exist_ok=True)
 
     def save_model(self, model: Any, filename: str):
@@ -67,3 +68,16 @@ class ModelDeployer:
         path = os.path.join(self.plots_path, f"{filename}.png")
         plt.savefig(path, bbox_inches='tight', dpi=150)
         print(f"   [Saved] Plot: {path}")
+
+    def save_params(self, params: Dict, filename: str):
+        """
+
+        :param params:
+        :param filename:
+        :return:
+        """
+
+        path = os.path.join(self.reports_path, f"{filename}_params.json")
+        with open(path, 'w') as f:
+            json.dump(params, f, indent=4)
+        print(f"   [Saved] Params: {path}")
