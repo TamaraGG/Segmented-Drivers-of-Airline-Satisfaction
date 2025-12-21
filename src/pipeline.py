@@ -109,7 +109,11 @@ class TrainingPipeline:
 
             print(f"   Metrics: {metrics}")
 
+        self.deployer.save_params(self.trainer.get_best_params(), seg_name)
+
         # 3. interpretation and plots
+        print(f"All best params: {self.trainer.get_best_params()}")
+
         self._run_interpretation(best_model, X_train_clean, X_test_clean, seg_name)
 
         return metrics
@@ -126,7 +130,8 @@ class TrainingPipeline:
         # A. Summary Plot
         analyzer.plot_summary(X_test, max_display=10)
         self.deployer.save_plot(f"SHAP_Summary_{seg_name}")
-        plt.show()
+        # plt.show()
+        plt.close()
 
         # B. Saturation Analysis (Top-3 features)
         top_df = analyzer.get_top_features(X_test, top_n=3)
@@ -136,7 +141,8 @@ class TrainingPipeline:
             if X_train[feat].nunique() > 2:
                 analyzer.plot_dependence(X_test, feature=feat)
                 self.deployer.save_plot(f"SHAP_Dependence_{seg_name}_{feat}")
-                plt.show()
+                # plt.show()
+                plt.close()
 
         # C. Delay Interaction
         if cfg.DELAY_OUTPUT_COL in X_test.columns:
