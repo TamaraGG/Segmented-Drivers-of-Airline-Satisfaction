@@ -58,9 +58,18 @@ CLASS_MAP = {
     'Business': 2
 }
 
+TRAVEL_TYPE_MAP = {
+    'Business travel': 0,
+    'Personal Travel': 1
+}
+
 ENCODER_MANUAL_CONFIG = {
     'Class': {
         'Map': CLASS_MAP,
+        'Suffix': '_Encoded'
+    },
+    'Type of Travel': {
+        'Map': TRAVEL_TYPE_MAP,
         'Suffix': '_Encoded'
     }
 }
@@ -86,7 +95,7 @@ SEGMENT_CONFIGS = []
 SEGMENT_CONFIGS.append({
     'name': 'Global_All_Data',
     'filter': lambda df: slice(None),
-    'drop_cols': ['Class']
+    'drop_cols': ['Class', 'Type of Travel']
 })
 
 # --- 2. MACRO SEGMENTS ---
@@ -94,7 +103,7 @@ for t_type in ALL_TYPES:
     SEGMENT_CONFIGS.append({
         'name': f"MACRO_{t_type.replace(' ', '_')}",
         'filter': lambda df, t=t_type: df['Type of Travel'] == t,
-        'drop_cols': ['Type of Travel', 'Class']
+        'drop_cols': ['Type of Travel', 'Class', 'Type of Travel_Encoded']
     })
 
 # --- 3. MICRO SEGMENTS ---
@@ -105,7 +114,7 @@ for t_type in ALL_TYPES:
         SEGMENT_CONFIGS.append({
             'name': safe_name,
             'filter': lambda df, t=t_type, c=t_class: (df['Type of Travel'] == t) & (df['Class'] == c),
-            'drop_cols': ['Type of Travel', 'Class', 'Class_Encoded']
+            'drop_cols': ['Type of Travel', 'Class', 'Class_Encoded', 'Type of Travel_Encoded']
         })
 
 MIN_SEGMENT_SIZE = 100
