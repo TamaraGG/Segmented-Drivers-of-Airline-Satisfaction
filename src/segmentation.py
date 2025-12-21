@@ -234,7 +234,8 @@ class SegmentManager:
                 'X_train': X_train,
                 'y_train': y_train,
                 'X_test': X_test,
-                'y_test': y_test
+                'y_test': y_test,
+                'override_grid': config.get('override_grid', None)
             }
 
         print("\nSegmentation finished.")
