@@ -77,12 +77,17 @@ class TrainingPipeline:
         X_train_raw, y_train = data['X_train'], data['y_train']
         X_test_raw, y_test = data['X_test'], data['y_test']
 
+        current_grid = cfg.XGB_PARAM_GRID.copy()
+        if data.get('override_grid'):
+            print(f"   [CONFIG] Applying custom params for {seg_name}")
+            current_grid.update(data['override_grid'])
+
         print(f"\n{'=' * 10} Processing: {seg_name} {'=' * 10}")
 
         # 1. train
         best_model = self.trainer.train(
             X_train_raw, y_train,
-            param_grid=cfg.XGB_PARAM_GRID,
+            param_grid=current_grid,
             scoring='f1'
         )
         self.deployer.save_model(best_model, seg_name)
@@ -142,4 +147,5 @@ class TrainingPipeline:
                 feature_color=top_service
             )
             self.deployer.save_plot(f"SHAP_Interaction_{seg_name}")
-            plt.show()
+            # plt.show()
+            plt.close()
