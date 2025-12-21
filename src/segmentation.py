@@ -1,6 +1,8 @@
 import pandas as pd
 from typing import List, Dict, Callable, Tuple, Generator
 
+from sklearn.model_selection import train_test_split
+
 
 class SegmentManager:
     """
@@ -53,6 +55,41 @@ class SegmentManager:
         for cls_val in counts.index:
             print(f"     Class {cls_val}: {counts[cls_val]:>5} samples ({fracs[cls_val]:6.1%})")
 
+    def _log_target_stats(self, y: pd.Series, seg_name: str):
+        """
+        Logs statistics of target variable distribution.
+        """
+        if y is None:
+            return
+
+        counts = y.value_counts()
+        fracs = y.value_counts(normalize=True)
+
+        print(f"   Target Distribution ({seg_name}):")
+        for cls_val in counts.index:
+            print(f"     Class {cls_val}: {counts[cls_val]:>5} samples ({fracs[cls_val]:6.1%})")
+
+    def _log_split_stats(self, train_df: pd.DataFrame, test_df: pd.DataFrame, seg_name: str):
+        """
+        Logs sizes of Train and Test data.
+        """
+        n_train = len(train_df)
+        n_test = len(test_df) if test_df is not None else 0
+        total = n_train + n_test
+
+        print(f"   Data Split Sizes ({seg_name}):")
+        if total == 0:
+            print("     Total: 0 samples (Empty)")
+            return
+
+        print(f"     Total: {total}")
+        print(f"     Train: {n_train:>5} ({n_train / total:6.1%})")
+
+        if n_test > 0:
+            print(f"     Test:  {n_test:>5} ({n_test / total:6.1%})")
+        else:
+            print(f"     Test:      0 (No test data)")
+
     def _is_segment_viable(self, y: pd.Series, seg_name: str) -> bool:
         """
         Desids weather it's possible to train the model with such distribution of target variable
@@ -70,6 +107,49 @@ class SegmentManager:
             print(f"   [WARNING] Risk of overfitting: Minority class has only {min_class_count} samples.")
 
         return True
+
+    def _ensure_balanced_split(self, train_df: pd.DataFrame, test_df: pd.DataFrame, seg_name: str) -> Tuple[
+        pd.DataFrame, pd.DataFrame]:
+        """
+        Checks weather there are enough data in test and train data.
+        Returns train and test data with correct distribution.
+        """
+
+        if test_df is None:
+            return train_df, None
+
+        n_train = len(train_df)
+        n_test = len(test_df)
+        total = n_train + n_test
+
+        if total < self.min_samples:
+            return train_df, test_df
+
+        min_test_size = 20
+
+        if n_test < min_test_size or n_train < self.min_samples:
+            print(f"   [RE-SPLIT] Bad original split (Train:{n_train}, Test:{n_test}). Reshuffling {total} samples...")
+
+            full_df = pd.concat([train_df, test_df])
+
+            try:
+                new_train, new_test = train_test_split(
+                    full_df,
+                    test_size=0.2,
+                    random_state=42,
+                    stratify=full_df[self.target_col]
+                )
+            except ValueError:
+                print("   [WARNING] Stratified split failed (rare class). Using random split.")
+                new_train, new_test = train_test_split(
+                    full_df,
+                    test_size=0.2,
+                    random_state=42
+                )
+
+            return new_train, new_test
+
+        return train_df, test_df
 
     def _check_distribution(self, y: pd.Series, seg_name: str) -> bool:
         """
@@ -118,11 +198,14 @@ class SegmentManager:
                     test_mask = filter_func(df_test)
                     test_subset = df_test[test_mask].copy()
 
+
+
             except Exception as e:
                 print(f"Error filtering segment '{seg_name}': {e}")
                 continue
 
             # 2. validation
+
             if len(train_subset) < self.min_samples:
                 print(f"SKIPPING segment '{seg_name}': Not enough samples ({len(train_subset)} < {self.min_samples})")
                 continue
@@ -135,7 +218,8 @@ class SegmentManager:
             # 3. feature selection
             X_train, y_train = self._prepare_subset(train_subset, drop_cols)
 
-            self._log_target_stats(y_train, seg_name)
+            #self._log_split_stats(train_subset, test_subset, seg_name)
+            #self._log_target_stats(y_train, seg_name)
 
             if not self._is_segment_viable(y_train, seg_name):
                 continue
