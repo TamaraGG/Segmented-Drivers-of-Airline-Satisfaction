@@ -77,7 +77,7 @@ class ModelDeployer:
         :return:
         """
 
-        path = os.path.join(self.reports_path, f"{filename}_params.json")
+        path = os.path.join(self.params_path, f"{filename}_params.json")
         with open(path, 'w') as f:
             json.dump(params, f, indent=4)
         print(f"   [Saved] Params: {path}")
